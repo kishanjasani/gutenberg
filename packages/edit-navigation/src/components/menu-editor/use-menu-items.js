@@ -57,7 +57,7 @@ export function useMenuItemsByClientId( query ) {
 	} ) );
 
 	const result = {};
-	if ( ! menuItems ) {
+	if ( ! menuItems || ! clientIdsByMenuId ) {
 		return result;
 	}
 	for ( const menuItem of menuItems ) {

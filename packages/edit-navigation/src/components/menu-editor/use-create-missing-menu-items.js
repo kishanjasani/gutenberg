@@ -22,41 +22,38 @@ import PromiseQueue from './promise-queue';
  */
 export default function useCreateMissingMenuItems() {
 	const promiseQueueRef = useRef( new PromiseQueue( 5 ) );
-	const enqueuedClientIds = useRef( [] );
-	const menuItemIdsByClientId = useSelect( ( select ) =>
-		select( 'core/edit-navigation' ).getMenuItemIdsByClientId()
-	);
+	const processedClientIds = useRef( [] );
 	const { assignMenuItemIdToClientId } = useDispatch(
 		'core/edit-navigation'
 	);
 
-	// Remove processed clientIds from the list of enqueued ids
-	enqueuedClientIds.current = enqueuedClientIds.current.filter(
-		( clientId ) => ! ( clientId in menuItemIdsByClientId )
-	);
-
-	const createMissingMenuItems = ( blocks ) => {
-		for ( const { clientId, name } of flattenBlocks( blocks ) ) {
-			// No need to create menuItems for the wrapping navigation block
-			if ( name === 'core/navigation' ) {
-				continue;
-			}
-			// Menu item was already created
-			if ( clientId in menuItemIdsByClientId ) {
-				continue;
-			}
-			// Menu item already in the queue
-			if ( enqueuedClientIds.current.includes( clientId ) ) {
-				continue;
-			}
-			enqueuedClientIds.current.push( clientId );
-			promiseQueueRef.current.enqueue( () =>
-				createDraftMenuItem( clientId ).then( ( menuItem ) =>
-					assignMenuItemIdToClientId( clientId, menuItem.id )
-				)
+	const createMissingMenuItems = useCallback(
+		( previousBlocks, newBlocks ) => {
+			const existingClientIds = flattenBlocks( previousBlocks ).map(
+				( { clientId } ) => clientId
 			);
+			for ( const { clientId, name } of flattenBlocks( newBlocks ) ) {
+				// No need to create menuItems for the wrapping navigation block
+				if ( name === 'core/navigation' ) {
+					continue;
+				}
+				// Menu item was already created
+				if ( existingClientIds.includes( clientId ) ) {
+					continue;
+				}
+				// Menu item already processed
+				if ( processedClientIds.current.includes( clientId ) ) {
+					continue;
+				}
+				processedClientIds.current.push( clientId );
+				promiseQueueRef.current.enqueue( () =>
+					createDraftMenuItem( clientId ).then( ( menuItem ) => {
+						assignMenuItemIdToClientId( clientId, menuItem.id );
+					} )
+				);
+			}
 		}
-	};
+	);
 	const onCreated = useCallback(
 		( callback ) => promiseQueueRef.current.then( callback ),
 		[ promiseQueueRef.current ]
