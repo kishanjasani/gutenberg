@@ -6,8 +6,6 @@ import {
 	BlockEditorProvider,
 } from '@wordpress/block-editor';
 import { useViewportMatch } from '@wordpress/compose';
-import { useState, useEffect, useCallback } from '@wordpress/element';
-import { useSelect } from '@wordpress/data';
 
 /**
  * Internal dependencies
@@ -15,32 +13,21 @@ import { useSelect } from '@wordpress/data';
 import MenuEditorShortcuts from './shortcuts';
 import BlockEditorArea from './block-editor-area';
 import NavigationStructureArea from './navigation-structure-area';
-import { useMenuItemsByClientId, useSaveMenuItems } from './use-menu-items';
-import useCreateMissingMenuItems from './use-create-missing-menu-items';
-import useNavigationBlockEditor, {
-	useStubPost,
-} from './use-navigation-block-editor';
-import { useMemo } from '@wordpress/element';
-
-// const DRAFT_POST_ID = 'navigation-post';
+import useNavigationBlockEditor from './use-navigation-block-editor';
 
 export default function MenuEditor( {
 	menuId,
 	blockEditorSettings,
 	onDeleteMenu,
 } ) {
+	const [
+		blocks,
+		onInput,
+		onChange,
+		saveMenuItems,
+	] = useNavigationBlockEditor( menuId );
+
 	const isLargeViewport = useViewportMatch( 'medium' );
-	const query = useMemo( () => ( { menus: menuId, per_page: -1 } ), [
-		menuId,
-	] );
-
-	useStubPost( query );
-	const [ blocks, onInput, onChange, onCreated ] = useNavigationBlockEditor(
-		query
-	);
-	const saveMenuItems = useSaveMenuItems( query );
-	const save = () => onCreated( () => saveMenuItems( blocks ) );
-
 	return (
 		<div className="edit-navigation-menu-editor">
 			<BlockEditorKeyboardShortcuts.Register />
@@ -57,13 +44,13 @@ export default function MenuEditor( {
 				} }
 			>
 				<BlockEditorKeyboardShortcuts />
-				<MenuEditorShortcuts saveBlocks={ save } />
+				<MenuEditorShortcuts saveBlocks={ saveMenuItems } />
 				<NavigationStructureArea
 					blocks={ blocks }
 					initialOpen={ isLargeViewport }
 				/>
 				<BlockEditorArea
-					saveBlocks={ save }
+					saveBlocks={ saveMenuItems }
 					menuId={ menuId }
 					onDeleteMenu={ onDeleteMenu }
 				/>
