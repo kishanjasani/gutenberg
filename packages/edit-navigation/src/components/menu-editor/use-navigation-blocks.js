@@ -15,19 +15,19 @@ import { useState, useRef, useEffect } from '@wordpress/element';
  */
 import { flattenBlocks } from './helpers';
 
-export default function useNavigationBlocks( menuItems ) {
+export default function useCreateNavigationBlock() {
 	const [ blocks, setBlocks ] = useState( [] );
 	const menuItemsRef = useRef( {} );
 	const { setMenuItemsToClientIdMapping } = useDispatch(
 		'core/edit-navigation'
 	);
-
-	// Refresh our model whenever menuItems change
-	useEffect( () => {
+	return ( menuItems ) => {
 		const [ innerBlocks, clientIdToMenuItemMapping ] = menuItemsToBlocks(
 			menuItems,
-			blocks[ 0 ]?.innerBlocks,
-			menuItemsRef.current
+			[],
+			{}
+			// blocks[ 0 ]?.innerBlocks,
+			// menuItemsRef.current
 		);
 
 		const navigationBlock = blocks[ 0 ]
@@ -36,13 +36,10 @@ export default function useNavigationBlocks( menuItems ) {
 
 		setBlocks( [ navigationBlock ] );
 		menuItemsRef.current = clientIdToMenuItemMapping;
-		setTimeout( () => setMenuItemsToClientIdMapping( clientIdToMenuItemMapping ) );
-	}, [ menuItems ] );
-
-	return {
-		blocks,
-		setBlocks,
-		menuItemsRef,
+		setTimeout( () =>
+			setMenuItemsToClientIdMapping( clientIdToMenuItemMapping )
+		);
+		return navigationBlock;
 	};
 }
 

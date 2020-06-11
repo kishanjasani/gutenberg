@@ -1,20 +1,36 @@
 /**
  * WordPress dependencies
  */
-import { useDispatch } from '@wordpress/data';
+import { useDispatch, useSelect } from '@wordpress/data';
 import { useEntityBlockEditor } from '@wordpress/core-data';
-import { useEffect, useState } from '@wordpress/element';
+import { useMemo, useEffect, useState } from '@wordpress/element';
+/**
+ * Internal dependencies
+ */
+import useCreateNavigationBlock from './use-navigation-blocks';
+import { useFetchMenuItems } from './use-menu-items';
 
 export const DRAFT_POST_ID = 'navigation-post';
 
-export function useStubPost( initialBlocks ) {
+export function useStubPost( query ) {
+	const menuItems = useFetchMenuItems( query );
+	const createNavigationBlock = useCreateNavigationBlock();
+	const initialBlocks = useMemo( () => createNavigationBlock( menuItems ), [
+		menuItems,
+	] );
+
 	const { receiveEntityRecords } = useDispatch( 'core' );
 	const [ hydrated, setHydrated ] = useState( false );
 
 	useEffect( () => {
-		if ( ! initialBlocks?.length ) {
+		if ( ! initialBlocks?.innerBlocks?.length ) {
 			setHydrated( false );
+			return;
 		}
+		if ( hydrated ) {
+			return;
+		}
+		console.log( 'initialBlocks 2', [ initialBlocks ] );
 		receiveEntityRecords(
 			'root',
 			'postType',
@@ -25,7 +41,7 @@ export function useStubPost( initialBlocks ) {
 					generated_slug: DRAFT_POST_ID,
 					status: 'draft',
 					type: 'page',
-					blocks: initialBlocks,
+					blocks: [ initialBlocks ],
 				},
 			],
 			null,
@@ -38,7 +54,7 @@ export function useStubPost( initialBlocks ) {
 	return hydrated;
 }
 
-export default function useNavigationBlockEditor( ) {
+export default function useNavigationBlockEditor() {
 	const [ blocks, onInput, onChange ] = useEntityBlockEditor(
 		'root',
 		'postType',

@@ -57,7 +57,10 @@ export function useMenuItemsByClientId( query ) {
 	} ) );
 
 	const result = {};
-	for ( const menuItem in menuItems ) {
+	if ( ! menuItems ) {
+		return result;
+	}
+	for ( const menuItem of menuItems ) {
 		const clientId = clientIdsByMenuId[ menuItem.id ];
 		if ( clientId ) {
 			result[ clientId ] = menuItem;
@@ -73,7 +76,14 @@ export function useSaveMenuItems( query ) {
 	);
 	const menuItemsByClientId = useMenuItemsByClientId( query );
 
-	const saveBlocks = async ( blocks ) => {
+	let select;
+	useSelect( ( s ) => {
+		select = s;
+	} );
+
+	const saveBlocks = async () => {
+		const blocks = select( 'core/block-editor' ).getBlocks();
+
 		const result = await batchSave(
 			query.menus,
 			menuItemsByClientId,
