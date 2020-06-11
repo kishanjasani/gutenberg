@@ -34,16 +34,12 @@ export default function MenuEditor( {
 		menuId,
 	] );
 
-	const stubPostReady = useStubPost( query );
+	useStubPost( query );
 	const [ blocks, onInput, onChange, onCreated ] = useNavigationBlockEditor(
 		query
 	);
 	const saveMenuItems = useSaveMenuItems( query );
 	const save = () => onCreated( () => saveMenuItems( blocks ) );
-
-	if ( ! stubPostReady ) {
-		return <div>Loading...</div>;
-	}
 
 	return (
 		<div className="edit-navigation-menu-editor">
