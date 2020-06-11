@@ -55,7 +55,11 @@ export function useMenuItemsByClientId( query ) {
 			'core/edit-navigation'
 		).getClientIdsByMenuId(),
 	} ) );
+	console.log( 'I said hey', clientIdsByMenuId, menuItems );
+	return mapMenuItemsByClientId( menuItems, clientIdsByMenuId );
+}
 
+function mapMenuItemsByClientId( menuItems, clientIdsByMenuId ) {
 	const result = {};
 	if ( ! menuItems || ! clientIdsByMenuId ) {
 		return result;
@@ -74,15 +78,29 @@ export function useSaveMenuItems( query ) {
 	const { createSuccessNotice, createErrorNotice } = useDispatch(
 		'core/notices'
 	);
-	const menuItemsByClientId = useMenuItemsByClientId( query );
+	const select = useSelect( ( s ) => s );
 
-	let select;
-	useSelect( ( s ) => {
-		select = s;
-	} );
+	const saveBlocks = async ( blocks ) => {
+		console.log(
+			'in save: menuItemsByClientId',
+			blocks,
+			menuItemsByClientId
+		);
 
-	const saveBlocks = async () => {
-		const blocks = select( 'core/block-editor' ).getBlocks();
+		const menuItems = select( 'core' ).getMenuItems( query );
+		const clientIdsByMenuId = select(
+			'core/edit-navigation'
+		).getClientIdsByMenuId();
+		console.log( 'I said hey', clientIdsByMenuId, menuItems );
+		const menuItemsByClientId = mapMenuItemsByClientId(
+			menuItems,
+			clientIdsByMenuId
+		);
+		console.log(
+			query.menus,
+			menuItemsByClientId,
+			blocks[ 0 ]
+		);
 
 		const result = await batchSave(
 			query.menus,

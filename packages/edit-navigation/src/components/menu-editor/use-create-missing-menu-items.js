@@ -18,14 +18,18 @@ import PromiseQueue from './promise-queue';
  * 1) limit the amount of requests processed at the same time
  * 2) save the menu only after all requests are finalized
  *
+ * @param query
  * @return {function(*=): void} Function registering it's argument to be called once all menuItems are created.
  */
-export default function useCreateMissingMenuItems() {
+export default function useCreateMissingMenuItems( query ) {
 	const promiseQueueRef = useRef( new PromiseQueue( 5 ) );
 	const processedClientIds = useRef( [] );
 	const { assignMenuItemIdToClientId } = useDispatch(
 		'core/edit-navigation'
 	);
+	const { receiveEntityRecords } = useDispatch( 'core' );
+
+	const select = useSelect( ( s ) => s );
 
 	const createMissingMenuItems = useCallback(
 		( previousBlocks, newBlocks ) => {
@@ -49,10 +53,21 @@ export default function useCreateMissingMenuItems() {
 				promiseQueueRef.current.enqueue( () =>
 					createDraftMenuItem( clientId ).then( ( menuItem ) => {
 						assignMenuItemIdToClientId( clientId, menuItem.id );
+						receiveEntityRecords(
+							'root',
+							'menuItem',
+							[
+								...select( 'core' ).getMenuItems( query ),
+								menuItem,
+							],
+							{ ...query, per_page: 1 },
+							false
+						);
 					} )
 				);
 			}
-		}
+		},
+		[ query ]
 	);
 	const onCreated = useCallback(
 		( callback ) => promiseQueueRef.current.then( callback ),

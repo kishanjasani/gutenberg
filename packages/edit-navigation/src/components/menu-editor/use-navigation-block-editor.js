@@ -14,6 +14,8 @@ import { useFetchMenuItems } from './use-menu-items';
 import { groupBy, keyBy, sortBy } from 'lodash';
 import { createBlock } from '@wordpress/blocks';
 import { flattenBlocks } from './helpers';
+import { useCallback } from '@wordpress/element';
+import useCreateMissingMenuItems from './use-create-missing-menu-items';
 
 export const DRAFT_POST_ID = 'navigation-post';
 
@@ -28,7 +30,6 @@ export function useStubPost( query ) {
 		if ( menuItems === null ) {
 			return;
 		}
-		console.log("Effect! nooooice!")
 		const [ innerBlocks, menuItemIdByClientId ] = menuItemsToBlocks(
 			menuItems
 		);
@@ -41,7 +42,7 @@ export function useStubPost( query ) {
 		createStubPost( receiveEntityRecords, navigationBlock ).then( () => {
 			setHydrated( true );
 		} );
-	}, [ menuItems ] );
+	}, [ menuItems === null, query ] );
 
 	return hydrated;
 }
@@ -65,14 +66,24 @@ function createStubPost( receiveEntityRecords, navigationBlock ) {
 	);
 }
 
-export default function useNavigationBlockEditor() {
+export default function useNavigationBlockEditor( query ) {
 	const [ blocks, onInput, onChange ] = useEntityBlockEditor(
 		'root',
 		'postType',
 		{ id: DRAFT_POST_ID }
 	);
+	const { createMissingMenuItems, onCreated } = useCreateMissingMenuItems(
+		query
+	);
+	const onProviderChange = useCallback(
+		( updatedBlocks ) => {
+			onChange( updatedBlocks );
+			createMissingMenuItems( blocks, updatedBlocks );
+		},
+		[ blocks, onChange, createMissingMenuItems ]
+	);
 
-	return [ blocks, onInput, onChange ];
+	return [ blocks, onInput, onProviderChange, onCreated ];
 }
 
 const menuItemsToBlocks = (
@@ -114,7 +125,6 @@ const menuItemsToBlocks = (
 
 	// menuItemsToTreeOfLinkBlocks takes an array of top-level menu items and recursively creates all their innerBlocks
 	const blocks = menuItemsToTreeOfBlocks( itemsByParentID[ 0 ] || [] );
-	console.log("mapped items to blocks?!")
 	return [ blocks, menuItemIdByClientId ];
 };
 
